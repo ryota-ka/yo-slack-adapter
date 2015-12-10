@@ -10,7 +10,7 @@ import Lib (getRequest)
 import Network.HTTP.Conduit (responseHeaders, responseStatus)
 import Network.HTTP.Types (statusCode)
 import Web.Yo.Query
-import Web.Slack.IncomingWebhook.Attachment (Attachment, defAttachment, withImageUrl)
+import Web.Slack.IncomingWebhook.Attachment (Attachment, defAttachment, withFallback, withImageUrl)
 import Web.Slack.IncomingWebhook.Message (defMessage, Message, withAttachments, withText, withUsername)
 
 slackMessageForYoQuery :: Query -> IO Message
@@ -18,7 +18,8 @@ slackMessageForYoQuery q = do
     text <- textForQuery q
     let accessory' = accessory q
     attachment <- attachmentForAccessory accessory'
-    return $ defMessage `withAttachments` maybeToList attachment `withText` text `withUsername` "Yo"
+    let attachmentWithFallback = flip withFallback text <$> attachment
+    return $ defMessage `withAttachments` maybeToList attachmentWithFallback `withText` text `withUsername` "Yo"
 
 attachmentForAccessory :: Maybe Accessory -> IO (Maybe Attachment)
 attachmentForAccessory (Just (Link link)) = do
