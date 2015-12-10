@@ -1,6 +1,15 @@
-module Lib
-    ( someFunc
-    ) where
+module Lib (
+    getRequest
+  ) where
 
-someFunc :: IO ()
-someFunc = putStrLn "someFunc"
+import Data.ByteString.Lazy (ByteString)
+import Network
+import Network.HTTP.Conduit
+
+getRequest :: String -> IO (Response ByteString)
+getRequest url = withSocketsDo $ do
+    request' <- parseUrl url
+    let request = request' { checkStatus = \_ _ _ -> Nothing }
+    manager <- newManager tlsManagerSettings
+    res <- httpLbs request manager
+    return res
