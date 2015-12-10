@@ -15,6 +15,7 @@ cabal-version:       >=1.10
 library
   hs-source-dirs:      src
   exposed-modules:     Lib
+                     , Web.Yo.Query
   build-depends:       base >= 4.7 && < 5
                      , aeson
                      , aeson-casing
