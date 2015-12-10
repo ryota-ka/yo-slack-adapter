@@ -1,8 +1,13 @@
+{-# LANGUAGE OverloadedStrings #-}
+
 module Web.YoSlackAdapter (
     slackMessageForYoQuery
   ) where
 
 import Data.List (intercalate)
+import Lib (getRequest)
+import Network.HTTP.Conduit (responseHeaders, responseStatus)
+import Network.HTTP.Types (statusCode)
 import Web.Yo.Query
 import Web.Slack.IncomingWebhook.Attachment (Attachment, defAttachment, withImageUrl)
 import Web.Slack.IncomingWebhook.Message (defMessage, Message, withAttachments, withText, withUsername)
@@ -50,3 +55,12 @@ staticMapUrl zoom (lat, lng) =
         baseUrl = "https://maps.googleapis.com/maps/api/staticmap?"
         concatParams = map (\(k, v) -> concat ["&", k, "=", v])
         coordinate = intercalate "," $ map show [lat, lng]
+
+isImage :: String -> IO Bool
+isImage url = do
+    res <- getRequest url
+    let statusCode' = statusCode . responseStatus $ res
+        contentType = lookup "Content-Type" . responseHeaders $ res
+    return $ (statusCode' == 200 && contentType `elem` map pure imageTypes)
+    where
+        imageTypes = ["image/gif", "image/jpeg", "image/png"]

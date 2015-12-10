@@ -25,6 +25,7 @@ library
                      , aeson-casing
                      , bytestring
                      , http-conduit
+                     , http-types
                      , network
   default-language:    Haskell2010
 
