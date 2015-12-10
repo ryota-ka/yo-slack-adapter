@@ -16,6 +16,7 @@ library
   hs-source-dirs:      src
   exposed-modules:     Lib
                      , Web.Yo.Query
+                     , Web.Slack.IncomingWebhook.Attachment
   build-depends:       base >= 4.7 && < 5
                      , aeson
                      , aeson-casing
