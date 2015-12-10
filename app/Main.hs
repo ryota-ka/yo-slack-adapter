@@ -42,6 +42,6 @@ main = do
                  Nothing -> status status400 >> html "Bad request"
                  Just _  -> do
                      query <- fromParameters . parseRawQuery . rawQueryString <$> request
-                     let message = slackMessageForYoQuery query
+                     message <- liftIO $ slackMessageForYoQuery query
                      liftIO $ sendMessage slackWebhookUrl message
                      html "Yo"

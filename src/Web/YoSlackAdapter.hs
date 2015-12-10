@@ -12,25 +12,29 @@ import Web.Yo.Query
 import Web.Slack.IncomingWebhook.Attachment (Attachment, defAttachment, withImageUrl)
 import Web.Slack.IncomingWebhook.Message (defMessage, Message, withAttachments, withText, withUsername)
 
-slackMessageForYoQuery :: Query -> Message
-slackMessageForYoQuery q = defMessage `withAttachments` attachments `withUsername` "Yo" `withText` text
-    where
-        attachments = attachmentsForAccessory $ accessory q
-        text = textForQuery q
+slackMessageForYoQuery :: Query -> IO Message
+slackMessageForYoQuery q = do
+    attachments <- attachmentsForAccessory $ accessory q
+    text <- textForQuery q
+    return $ defMessage `withAttachments` attachments `withUsername` "Yo" `withText` text
 
-attachmentsForAccessory :: Maybe Accessory -> [Attachment]
-attachmentsForAccessory (Just (Location lat lng)) = [defAttachment `withImageUrl` (staticMapUrl 16 (lat, lng))]
-attachmentsForAccessory _ = []
+attachmentsForAccessory :: Maybe Accessory -> IO [Attachment]
+attachmentsForAccessory (Just (Link link)) = do
+    isImage' <- isImage link
+    return $ if isImage'
+                then [defAttachment `withImageUrl` link]
+                else []
+attachmentsForAccessory (Just (Location lat lng)) = return [defAttachment `withImageUrl` (staticMapUrl 16 (lat, lng))]
+attachmentsForAccessory _ = return []
 
-textForQuery :: Query -> String
-textForQuery (Query username Nothing) = "Yo from " ++ username
-textForQuery (Query username (Just (Link link))) = concat [
-    ":link: Yo Link from "
-  , username
-  , "\n"
-  , link
-  ]
-textForQuery (Query username (Just (Location lat lng))) = concat [
+textForQuery :: Query -> IO String
+textForQuery (Query username Nothing) = return $ "Yo from " ++ username
+textForQuery (Query username (Just (Link link))) = do
+  isImage' <- isImage link
+  return $ if isImage'
+              then ":camera: Photo from " ++ username ++ "\n" ++ link
+              else ":link: Yo Link from " ++ username ++ "\n" ++ link
+textForQuery (Query username (Just (Location lat lng))) = return $ concat [
     ":round_pushpin: "
   , username
   , " @ ("
