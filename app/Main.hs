@@ -3,6 +3,7 @@
 
 module Main where
 
+import Control.Concurrent (forkIO)
 import Control.Monad (when)
 import Control.Monad.IO.Class (liftIO)
 import Data.Aeson (toJSON)
@@ -43,5 +44,5 @@ main = do
                  Just _  -> do
                      query <- fromParameters . parseRawQuery . rawQueryString <$> request
                      message <- liftIO $ slackMessageForYoQuery query
-                     liftIO $ sendMessage slackWebhookUrl message
+                     liftIO . forkIO $ sendMessage slackWebhookUrl message
                      html "Yo"
