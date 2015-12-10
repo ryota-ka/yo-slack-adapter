@@ -5,6 +5,7 @@ module Web.YoSlackAdapter (
   ) where
 
 import Data.List (intercalate)
+import Data.Maybe (maybeToList)
 import Lib (getRequest)
 import Network.HTTP.Conduit (responseHeaders, responseStatus)
 import Network.HTTP.Types (statusCode)
@@ -14,18 +15,19 @@ import Web.Slack.IncomingWebhook.Message (defMessage, Message, withAttachments, 
 
 slackMessageForYoQuery :: Query -> IO Message
 slackMessageForYoQuery q = do
-    attachments <- attachmentsForAccessory $ accessory q
     text <- textForQuery q
-    return $ defMessage `withAttachments` attachments `withUsername` "Yo" `withText` text
+    let accessory' = accessory q
+    attachment <- attachmentForAccessory accessory'
+    return $ defMessage `withAttachments` maybeToList attachment `withText` text `withUsername` "Yo"
 
-attachmentsForAccessory :: Maybe Accessory -> IO [Attachment]
-attachmentsForAccessory (Just (Link link)) = do
+attachmentForAccessory :: Maybe Accessory -> IO (Maybe Attachment)
+attachmentForAccessory (Just (Link link)) = do
     isImage' <- isImage link
     return $ if isImage'
-                then [defAttachment `withImageUrl` link]
-                else []
-attachmentsForAccessory (Just (Location lat lng)) = return [defAttachment `withImageUrl` (staticMapUrl 16 (lat, lng))]
-attachmentsForAccessory _ = return []
+                then Just $ defAttachment `withImageUrl` link
+                else Nothing
+attachmentForAccessory (Just (Location lat lng)) = return . Just $ defAttachment `withImageUrl` (staticMapUrl 16 (lat, lng))
+attachmentForAccessory _ = return Nothing
 
 textForQuery :: Query -> IO String
 textForQuery (Query username Nothing) = return $ "Yo from " ++ username
