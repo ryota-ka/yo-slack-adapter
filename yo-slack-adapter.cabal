@@ -36,7 +36,10 @@ executable yo-slack-adapter-exe
                      , yo-slack-adapter
                      , aeson
                      , bytestring
+                     , http-types
                      , scotty
+                     , transformers
+                     , wai
   default-language:    Haskell2010
 
 test-suite yo-slack-adapter-test
