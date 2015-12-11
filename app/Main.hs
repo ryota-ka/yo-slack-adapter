@@ -13,6 +13,7 @@ import Data.ByteString.Char8 (unpack)
 import Data.Maybe (fromMaybe)
 import GHC.Word (Word8)
 import Network.HTTP.Types (status400)
+import Network.HTTP.Types.URI (urlDecode)
 import Network.Wai (rawQueryString)
 import System.Environment (lookupEnv)
 import Text.Read (readMaybe)
@@ -42,7 +43,7 @@ main = do
             case (lookup "username" params') of
                  Nothing -> status status400 >> html "Bad request"
                  Just _  -> do
-                     query <- fromParameters . parseRawQuery . rawQueryString <$> request
+                     query <- fromParameters . parseRawQuery . urlDecode False . rawQueryString <$> request
                      message <- liftIO $ slackMessageForYoQuery query
                      liftIO . forkIO $ sendMessage slackWebhookUrl message
                      html "Yo"
