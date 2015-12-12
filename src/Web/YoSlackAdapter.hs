@@ -12,10 +12,11 @@ import Web.Slack.IncomingWebhook.Attachment (Attachment, defAttachment, withFall
 import Web.Slack.IncomingWebhook.Message (defMessage, Message, withAttachments, withText, withUnfurlLinks, withUsername)
 
 slackMessageForYo :: Yo -> Message
-slackMessageForYo yo = defMessage `withAttachments` attachments
-                                  `withText`        text
-                                  `withUnfurlLinks` True
-                                  `withUsername`    "Yo"
+slackMessageForYo yo =
+    defMessage `withAttachments` attachments
+               `withText`        text
+               `withUnfurlLinks` True
+               `withUsername`    "Yo"
     where
         attachments = maybeToList $ flip withFallback text <$> attachmentForYo yo
         text = textForYo yo
@@ -36,7 +37,7 @@ textForYo (YoLocation username _ _ locality) =
 
 staticMapUrl :: Int -> (Double, Double) -> String
 staticMapUrl zoom (lat, lng) =
-    foldl (++) baseUrl $ concatParams [
+    baseUrl `withParams` [
         ("center"  , coordinate)
       , ("format"  , "png")
       , ("sensor"  , "false")
@@ -46,6 +47,6 @@ staticMapUrl zoom (lat, lng) =
       , ("zoom"    , show zoom)
       ]
     where
-        baseUrl = "https://maps.googleapis.com/maps/api/staticmap?"
-        concatParams = map (\(k, v) -> concat ["&", k, "=", v])
+        baseUrl = "https://maps.googleapis.com/maps/api/staticmap"
         coordinate = intercalate "," $ map show [lat, lng]
+        withParams url = (url ++) . ('?' :) . intercalate "&" . map (\(k, v) -> k ++ '=' : v)

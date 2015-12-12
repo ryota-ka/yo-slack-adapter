@@ -16,8 +16,8 @@ import Network.HTTP.Types (statusCode)
 import Text.Read (readMaybe)
 
 type Locality = String
-type Username = String
 type URL      = String
+type Username = String
 
 data Yo = JustYo     { username :: Username }
         | YoLink     { username :: Username, link :: URL }
@@ -29,12 +29,14 @@ fromParameters :: [(String, String)] -> IO (Maybe Yo)
 fromParameters params = case lookup "username" params of
                              Nothing       -> return Nothing
                              Just username -> do
-                                 yo <- Just <$> fromParametersWithUsername username params
-                                 return yo
+                                 yo <- fromParametersWithUsername username params
+                                 return $ Just yo
 
 fromParametersWithUsername :: Username -> [(String, String)] -> IO Yo
 fromParametersWithUsername username params = do
-    case (lookup "link" params, lookup "location" params >>= parseCoordinate) of
+    let link  = lookup "link"     params
+        coord = lookup "location" params >>= parseCoordinate
+    case (link, coord) of
          (Just link, _) -> do
              isImage' <- isImage link
              let constructor = if isImage' then YoPhoto else YoLink
@@ -69,17 +71,16 @@ instance FromJSON Component where
                            <*> v .: "types"
     parseJSON _ = mzero
 
-endpointForCoordinate :: (Double, Double) -> URL
-endpointForCoordinate (lat, lng) = concat [
-    "https://maps.googleapis.com/maps/api/geocode/json?sensor=false&latlng="
-  , show lat
-  , ","
-  , show lng
-  ]
-
 reverseGeocode :: (Double, Double) -> IO (Maybe Locality)
 reverseGeocode (lat, lng) = do
     let url = endpointForCoordinate (lat, lng)
     body <- responseBody <$> getRequest url
     let components = body ^? key "results" . nth 0 . key "address_components" >>= (decode . encode) :: Maybe [Component]
     return $ components >>= find (elem "locality" . types) >>= return . longName
+    where
+        endpointForCoordinate (lat, lng) = concat [
+            "https://maps.googleapis.com/maps/api/geocode/json?sensor=false&latlng="
+          , show lat
+          , ","
+          , show lng
+          ]

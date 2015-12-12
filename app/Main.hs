@@ -5,6 +5,7 @@ module Main where
 
 import Control.Concurrent (forkIO)
 import Control.Monad.IO.Class (liftIO)
+import Data.Bifunctor (bimap, second)
 import qualified Data.ByteString as BS
 import Data.ByteString (ByteString)
 import Data.ByteString.Char8 (unpack)
@@ -22,10 +23,7 @@ import Web.YoSlackAdapter (slackMessageForYo)
 
 parseRawQuery :: ByteString -> [(String, String)]
 parseRawQuery "" = []
-parseRawQuery q  = map (unpackBoth . splitIntoKeyVal) . BS.split 38 . BS.tail $ q
-    where
-        splitIntoKeyVal = (\(k, v) -> (k, BS.tail v)) . BS.break (== 61)
-        unpackBoth = \(x, y) -> (unpack x, unpack y)
+parseRawQuery q  = map (bimap unpack unpack . second BS.tail . BS.break (== 61)) . BS.split 38 . BS.tail $ q
 
 main :: IO ()
 main = do
