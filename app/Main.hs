@@ -4,9 +4,7 @@
 module Main where
 
 import Control.Concurrent (forkIO)
-import Control.Monad (when)
 import Control.Monad.IO.Class (liftIO)
-import Data.Aeson (toJSON)
 import qualified Data.ByteString as BS
 import Data.ByteString (ByteString)
 import Data.ByteString.Char8 (unpack)
@@ -19,11 +17,12 @@ import System.Environment (lookupEnv)
 import Text.Read (readMaybe)
 import Web.Scotty (get, html, params, request, scotty, status)
 import Web.Slack.IncomingWebhook (sendMessage)
-import Web.Yo.Query (fromParameters, username)
-import Web.YoSlackAdapter (slackMessageForYoQuery)
+import Web.Yo (fromParameters, Yo (..))
+import Web.YoSlackAdapter (slackMessageForYo)
 
 parseRawQuery :: ByteString -> [(String, String)]
-parseRawQuery = map (unpackBoth . splitIntoKeyVal) . BS.split 38 . BS.tail
+parseRawQuery "" = []
+parseRawQuery q  = map (unpackBoth . splitIntoKeyVal) . BS.split 38 . BS.tail $ q
     where
         splitIntoKeyVal = (\(k, v) -> (k, BS.tail v)) . BS.break (== 61)
         unpackBoth = \(x, y) -> (unpack x, unpack y)
@@ -39,11 +38,11 @@ main = do
 
     scotty port $ do
         get "/" $ do
-            params' <- params
-            case (lookup "username" params') of
-                 Nothing -> status status400 >> html "Bad request"
-                 Just _  -> do
-                     query <- fromParameters . parseRawQuery . urlDecode False . rawQueryString <$> request
-                     message <- liftIO $ slackMessageForYoQuery query
+            params <- parseRawQuery . urlDecode False . rawQueryString <$> request
+            yo <- liftIO $ fromParameters params
+            case yo of
+                 Nothing -> status status400 >> html "Bad Request"
+                 Just yo -> do
+                     let message = slackMessageForYo yo
                      liftIO . forkIO $ sendMessage slackWebhookUrl message
                      html "Yo"

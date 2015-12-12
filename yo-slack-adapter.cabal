@@ -15,9 +15,8 @@ cabal-version:       >=1.10
 library
   hs-source-dirs:      src
   exposed-modules:     Lib
-                     , Web.Yo.Query
+                     , Web.Yo
                      , Web.YoSlackAdapter
-                     , Web.YoSlackAdapter.ReverseGeocode
                      , Web.Slack.IncomingWebhook
                      , Web.Slack.IncomingWebhook.Attachment
                      , Web.Slack.IncomingWebhook.Message
