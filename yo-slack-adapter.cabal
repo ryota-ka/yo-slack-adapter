@@ -17,6 +17,7 @@ library
   exposed-modules:     Lib
                      , Web.Yo.Query
                      , Web.YoSlackAdapter
+                     , Web.YoSlackAdapter.ReverseGeocode
                      , Web.Slack.IncomingWebhook
                      , Web.Slack.IncomingWebhook.Attachment
                      , Web.Slack.IncomingWebhook.Message

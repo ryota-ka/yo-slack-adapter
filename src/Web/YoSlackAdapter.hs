@@ -10,6 +10,7 @@ import Lib (getRequest)
 import Network.HTTP.Conduit (responseHeaders, responseStatus)
 import Network.HTTP.Types (statusCode)
 import Web.Yo.Query
+import Web.YoSlackAdapter.ReverseGeocode (reverseGeocode)
 import Web.Slack.IncomingWebhook.Attachment (Attachment, defAttachment, withFallback, withImageUrl)
 import Web.Slack.IncomingWebhook.Message (defMessage, Message, withAttachments, withText, withUsername)
 
@@ -37,15 +38,11 @@ textForQuery (Query username (Just (Link link))) = do
   return $ if isImage'
               then ":camera: Photo from " ++ username ++ "\n" ++ link
               else ":link: Yo Link from " ++ username ++ "\n" ++ link
-textForQuery (Query username (Just (Location lat lng))) = return $ concat [
-    ":round_pushpin: "
-  , username
-  , " @ ("
-  , show lat
-  , ", "
-  , show lng
-  , ")"
-  ]
+textForQuery (Query username (Just (Location lat lng))) = do
+    address <- reverseGeocode (lat, lng)
+    return $ case address of
+                  Nothing       -> ":round_pushpin: Location from " ++ username
+                  Just locality -> ":round_pushpin:" ++ username ++ " @ " ++ locality
 
 staticMapUrl :: Int -> (Double, Double) -> String
 staticMapUrl zoom (lat, lng) =
