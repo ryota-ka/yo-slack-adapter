@@ -26,6 +26,8 @@ library
                      , bytestring
                      , http-conduit
                      , http-types
+                     , lens
+                     , lens-aeson
                      , network
   default-language:    Haskell2010
 
