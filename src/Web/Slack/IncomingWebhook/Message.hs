@@ -8,6 +8,8 @@ module Web.Slack.IncomingWebhook.Message (
   , withIconEmoji
   , withIconUrl
   , withText
+  , withUnfurlLinks
+  , withUnfurlMedia
   , withUsername
   ) where
 
@@ -22,6 +24,8 @@ data Message = Message {
   , messageIconEmoji   :: Maybe String
   , messageIconUrl     :: Maybe String
   , messageText        :: Maybe String
+  , messageUnfurlLinks :: Maybe Bool
+  , messageUnfurlMedia :: Maybe Bool
   , messageUsername    :: Maybe String
   }
   deriving (Eq, Generic, Show)
@@ -36,6 +40,8 @@ defMessage = Message {
   , messageIconEmoji   = Nothing
   , messageIconUrl     = Nothing
   , messageText        = Nothing
+  , messageUnfurlLinks = Nothing
+  , messageUnfurlMedia = Nothing
   , messageUsername    = Nothing
   }
 
@@ -53,6 +59,12 @@ withIconUrl m iconUrl = m { messageIconUrl = Just iconUrl }
 
 withText :: Message -> String -> Message
 withText m text = m { messageText = Just text }
+
+withUnfurlLinks :: Message -> Bool -> Message
+withUnfurlLinks m x = m { messageUnfurlLinks = Just x }
+
+withUnfurlMedia :: Message -> Bool -> Message
+withUnfurlMedia m x = m { messageUnfurlMedia = Just x }
 
 withUsername :: Message -> String -> Message
 withUsername m username = m { messageUsername = Just username }

@@ -9,11 +9,12 @@ import Data.Maybe (maybeToList)
 import Lib (getRequest)
 import Web.Yo (Yo (..))
 import Web.Slack.IncomingWebhook.Attachment (Attachment, defAttachment, withFallback, withImageUrl)
-import Web.Slack.IncomingWebhook.Message (defMessage, Message, withAttachments, withText, withUsername)
+import Web.Slack.IncomingWebhook.Message (defMessage, Message, withAttachments, withText, withUnfurlLinks, withUsername)
 
 slackMessageForYo :: Yo -> Message
 slackMessageForYo yo = defMessage `withAttachments` attachments
                                   `withText`        text
+                                  `withUnfurlLinks` True
                                   `withUsername`    "Yo"
     where
         attachments = maybeToList $ flip withFallback text <$> attachmentForYo yo
