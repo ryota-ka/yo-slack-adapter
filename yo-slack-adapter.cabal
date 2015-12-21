@@ -1,5 +1,5 @@
 name:                yo-slack-adapter
-version:             0.1.0.0
+version:             0.2.0.0
 synopsis:            Send notifications to Slack when receiving Yo's
 description:         Please see README.md
 homepage:            http://github.com/githubuser/yo-slack-adapter
