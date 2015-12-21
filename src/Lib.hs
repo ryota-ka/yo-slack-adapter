@@ -1,15 +1,25 @@
+{-# LANGUAGE OverloadedStrings #-}
+
 module Lib (
     getRequest
+  , headRequest
   ) where
 
-import Data.ByteString.Lazy (ByteString)
+import qualified Data.ByteString.Internal as BS
+import qualified Data.ByteString.Lazy.Internal as LBS
 import Network
 import Network.HTTP.Conduit
 
-getRequest :: String -> IO (Response ByteString)
-getRequest url = withSocketsDo $ do
+getRequest  = simpleRequest "GET"
+headRequest = simpleRequest "HEAD"
+
+type Method = BS.ByteString
+type URL = String
+
+simpleRequest :: Method -> URL -> IO (Response LBS.ByteString)
+simpleRequest method url = withSocketsDo $ do
     request' <- parseUrl url
-    let request = request' { checkStatus = \_ _ _ -> Nothing }
+    let request = request' { method = method, checkStatus = \_ _ _ -> Nothing }
     manager <- newManager tlsManagerSettings
     res <- httpLbs request manager
     return res

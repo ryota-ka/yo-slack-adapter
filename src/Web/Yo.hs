@@ -9,8 +9,9 @@ import Control.Lens ((^?))
 import Control.Monad (mzero)
 import Data.Aeson ((.:), encode, decode, FromJSON, parseJSON, Value (Object))
 import Data.Aeson.Lens (key, nth)
+import Data.ByteString (ByteString, isPrefixOf)
 import Data.List (find)
-import Lib (getRequest)
+import Lib (getRequest, headRequest)
 import Network.HTTP.Conduit (responseBody, responseHeaders, responseStatus)
 import Network.HTTP.Types (statusCode)
 import Text.Read (readMaybe)
@@ -22,8 +23,14 @@ type Username = String
 data Yo = JustYo     { username :: Username }
         | YoLink     { username :: Username, link :: URL }
         | YoPhoto    { username :: Username, link :: URL }
+        | YoVideo    { username :: Username, link :: URL }
         | YoLocation { username :: Username, lat :: Double, lng :: Double, locality :: Maybe Locality }
         deriving (Eq, Show)
+
+data Media = NoMedia
+           | Photo
+           | Video
+           deriving (Show)
 
 fromParameters :: [(String, String)] -> IO (Maybe Yo)
 fromParameters params = case lookup "username" params of
@@ -38,8 +45,12 @@ fromParametersWithUsername username params = do
         coord = lookup "location" params >>= parseCoordinate
     case (link, coord) of
          (Just link, _) -> do
-             isImage' <- isImage link
-             let constructor = if isImage' then YoPhoto else YoLink
+             contentType <- contentTypeForURL link
+             let mediaType = mediaForContentType <$> contentType
+             let constructor = case mediaType of
+                                    Just Photo -> YoPhoto
+                                    Just Video -> YoVideo
+                                    _          -> YoLink
              return $ constructor username link
          (_, Just (lat, lng)) -> do
              locality <- reverseGeocode (lat, lng)
@@ -49,14 +60,26 @@ fromParametersWithUsername username params = do
         parseCoordinate :: String -> Maybe (Double, Double)
         parseCoordinate = readMaybe . ('(' :) . (++ ")") . map (\c -> if c == ';' then ',' else c)
 
-isImage :: URL -> IO Bool
-isImage link = do
-    res <- getRequest link
+type ContentType = ByteString
+
+contentTypeForURL :: URL -> IO (Maybe ContentType)
+contentTypeForURL link = do
+    res <- headRequest link
     let statusCode' = statusCode . responseStatus $ res
         contentType = lookup "Content-Type" . responseHeaders $ res
-    return $ (statusCode' == 200 && contentType `elem` map pure imageTypes)
-    where
-        imageTypes = ["image/gif", "image/jpeg", "image/png"]
+    return $ case statusCode' of
+                  200 -> contentType
+                  _   -> Nothing
+
+mediaForContentType :: ContentType -> Media
+mediaForContentType contentType = orNoMedia
+                                  . foldl (>>=) (return contentType)
+                                  . map mkFilter
+                                  $ [("image/", Photo), ("video/", Video)]
+    where orNoMedia  = either id (const NoMedia)
+          mkFilter (prefix, media) = \contentType -> if prefix `isPrefixOf` contentType
+                                                        then Left media
+                                                        else Right contentType
 
 data Component = Component {
     longName  :: String

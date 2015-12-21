@@ -5,7 +5,6 @@ module Web.Slack.IncomingWebhook (
   ) where
 
 import Data.Aeson (encode)
-import Data.ByteString.Lazy (toStrict)
 import Network (withSocketsDo)
 import Network.HTTP.Conduit
 import Web.Slack.IncomingWebhook.Attachment (Attachment)
@@ -19,7 +18,7 @@ sendMessage url message = do
             checkStatus = \_ _ _ -> Nothing
           , method = "POST"
           , rawBody = True
-          , requestBody = RequestBodyBS . toStrict . encode $ message
+          , requestBody = RequestBodyLBS . encode $ message
         }
         manager <- newManager tlsManagerSettings
         res <- httpLbs request manager

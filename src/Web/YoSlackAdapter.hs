@@ -30,6 +30,7 @@ textForYo :: Yo -> String
 textForYo (JustYo username) = "Yo from " ++ username
 textForYo (YoLink username link) = ":link: Yo Link from " ++ username ++ "\n" ++ link
 textForYo (YoPhoto username link) = ":camera: Photo from " ++ username
+textForYo (YoVideo username link) = ":video_camera: Video from " ++ username ++ "\n" ++ link
 textForYo (YoLocation username _ _ locality) =
      case locality of
           Just locality -> ":round_pushpin: " ++ username ++ " @ " ++ locality
