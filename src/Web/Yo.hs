@@ -33,11 +33,8 @@ data Media = NoMedia
            deriving (Show)
 
 fromParameters :: [(String, String)] -> IO (Maybe Yo)
-fromParameters params = case lookup "username" params of
-                             Nothing       -> return Nothing
-                             Just username -> do
-                                 yo <- fromParametersWithUsername username params
-                                 return $ Just yo
+fromParameters params =
+    traverse (flip fromParametersWithUsername params) $ lookup "username" params
 
 fromParametersWithUsername :: Username -> [(String, String)] -> IO Yo
 fromParametersWithUsername username params = do
