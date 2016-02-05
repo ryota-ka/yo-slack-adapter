@@ -64,9 +64,9 @@ contentTypeForURL link = do
     res <- headRequest link
     let statusCode' = statusCode . responseStatus $ res
         contentType = lookup "Content-Type" . responseHeaders $ res
-    return $ case statusCode' of
-                  200 -> contentType
-                  _   -> Nothing
+    return $ if statusCode' == 200
+                then contentType
+                else Nothing
 
 mediaForContentType :: ContentType -> Media
 mediaForContentType contentType = orNoMedia
