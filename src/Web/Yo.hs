@@ -5,16 +5,16 @@ module Web.Yo (
   , Yo (..)
   ) where
 
-import Control.Lens ((^?))
-import Control.Monad (mzero)
-import Data.Aeson ((.:), encode, decode, FromJSON, parseJSON, Value (Object))
-import Data.Aeson.Lens (key, nth)
+import Control.Lens ((^?), (^.), (^..))
+import Data.Aeson ((.:), decode, Value (Object, String))
+import Data.Aeson.Lens (key, nth, values)
 import Data.ByteString (ByteString, isPrefixOf)
+import qualified Data.ByteString.Lazy as LBS
 import Data.List (find)
-import Lib (getRequest, headRequest)
-import Network.HTTP.Conduit (responseBody, responseHeaders, responseStatus)
-import Network.HTTP.Types (statusCode)
+import Data.Maybe (listToMaybe)
+import qualified Data.Text as T
 import Text.Read (readMaybe)
+import Network.Wreq
 
 type Locality = String
 type URL      = String
@@ -61,9 +61,9 @@ type ContentType = ByteString
 
 contentTypeForURL :: URL -> IO (Maybe ContentType)
 contentTypeForURL link = do
-    res <- headRequest link
-    let statusCode' = statusCode . responseStatus $ res
-        contentType = lookup "Content-Type" . responseHeaders $ res
+    res <- head_ link
+    let statusCode' = res ^. responseStatus . statusCode
+        contentType = res ^? responseHeader "Content-Type"
     return $ if statusCode' == 200
                 then contentType
                 else Nothing
@@ -78,27 +78,19 @@ mediaForContentType contentType = orNoMedia
                                                         then Left media
                                                         else Right contentType
 
-data Component = Component {
-    longName  :: String
-  , shortName :: String
-  , types     :: [String]
-  } deriving (Show)
-
-instance FromJSON Component where
-    parseJSON (Object v) = Component
-                           <$> v .: "long_name"
-                           <*> v .: "short_name"
-                           <*> v .: "types"
-    parseJSON _ = mzero
-
 reverseGeocode :: (Double, Double) -> IO (Maybe Locality)
-reverseGeocode (lat, lng) = do
-    let url = endpointForCoordinate (lat, lng)
-    body <- responseBody <$> getRequest url
-    let components = body ^? key "results" . nth 0 . key "address_components" >>= (decode . encode) :: Maybe [Component]
-    return $ components >>= find (elem "locality" . types) >>= return . longName
+reverseGeocode (lat, lng) = localityForResponse <$> get url
     where
-        endpointForCoordinate (lat, lng) = concat [
+        fromString (String str) = Just str
+        fromString _            = Nothing
+        localityForResponse res =
+            (decode (res ^. responseBody) :: Maybe Value)
+                >>= return . (^.. key "results" . nth 0 . key "address_components" . values)
+                >>= find (\c -> String "locality" `elem` c ^.. key "types" . values)
+                >>= (^? key "long_name")
+                >>= fromString
+                >>= return . T.unpack
+        url = concat [
             "https://maps.googleapis.com/maps/api/geocode/json?sensor=false&latlng="
           , show lat
           , ","

@@ -6,7 +6,6 @@ module Web.YoSlackAdapter (
 
 import Data.List (intercalate)
 import Data.Maybe (maybeToList)
-import Lib (getRequest)
 import Web.Yo (Yo (..))
 import Web.Slack.IncomingWebhook.Attachment (Attachment, defAttachment, withFallback, withImageUrl)
 import Web.Slack.IncomingWebhook.Message (defMessage, Message, withAttachments, withText, withUnfurlLinks, withUsername)

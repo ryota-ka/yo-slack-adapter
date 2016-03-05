@@ -4,22 +4,12 @@ module Web.Slack.IncomingWebhook (
     sendMessage
   ) where
 
-import Data.Aeson (encode)
+import Control.Monad (void)
+import Data.Aeson (encode, toJSON)
 import Network (withSocketsDo)
-import Network.HTTP.Conduit
+import Network.Wreq
 import Web.Slack.IncomingWebhook.Attachment (Attachment)
 import Web.Slack.IncomingWebhook.Message (defMessage, Message)
 
 sendMessage :: String -> Message -> IO ()
-sendMessage url message = do
-    withSocketsDo $ do
-        request' <- parseUrl url
-        let request = request' {
-            checkStatus = \_ _ _ -> Nothing
-          , method = "POST"
-          , rawBody = True
-          , requestBody = RequestBodyLBS . encode $ message
-        }
-        manager <- newManager tlsManagerSettings
-        res <- httpLbs request manager
-        return ()
+sendMessage url message = void $ post url (toJSON message)
