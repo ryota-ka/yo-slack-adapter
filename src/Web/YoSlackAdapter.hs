@@ -49,4 +49,5 @@ staticMapUrl zoom (lat, lng) =
     where
         baseUrl = "https://maps.googleapis.com/maps/api/staticmap"
         coordinate = intercalate "," $ map show [lat, lng]
-        withParams url = (url ++) . ('?' :) . intercalate "&" . map (\(k, v) -> k ++ '=' : v)
+        withParams url = (url ++) . ('?' :) . intercalate "&" . map (uncurry eq)
+        key `eq` value = mconcat [key, "=", value]
