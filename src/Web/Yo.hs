@@ -7,7 +7,7 @@ module Web.Yo (
 
 import Control.Lens ((^?), (^.), (^..))
 import Data.Aeson ((.:), decode, Value (Object, String))
-import Data.Aeson.Lens (key, nth, values)
+import Data.Aeson.Lens (_String, key, nth, values)
 import Data.ByteString (ByteString, isPrefixOf)
 import qualified Data.ByteString.Lazy as LBS
 import Data.List (find)
@@ -81,14 +81,11 @@ mediaForContentType contentType = orNoMedia
 reverseGeocode :: (Double, Double) -> IO (Maybe Locality)
 reverseGeocode (lat, lng) = localityForResponse <$> get url
     where
-        fromString (String str) = Just str
-        fromString _            = Nothing
         localityForResponse res =
             (decode (res ^. responseBody) :: Maybe Value)
                 >>= return . (^.. key "results" . nth 0 . key "address_components" . values)
                 >>= find (\c -> String "locality" `elem` c ^.. key "types" . values)
-                >>= (^? key "long_name")
-                >>= fromString
+                >>= (^? key "long_name" . _String)
                 >>= return . T.unpack
         url = concat [
             "https://maps.googleapis.com/maps/api/geocode/json?sensor=false&latlng="
